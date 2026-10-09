@@ -1,0 +1,25 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const ts = require('typescript');
+const source = fs.readFileSync(path.join(__dirname, '../src/lib/pyodide-worker.ts'), 'utf8');
+// Exercise the worker's real parser without booting a worker or fetching WASM.
+const parserSource = source.slice(source.indexOf('// ---- pytest output parsing'), source.indexOf('\ntype PytestResult ='));
+const code = ts.transpileModule(parserSource, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+const context = {};
+vm.runInNewContext(code, context);
+const parse = (text) => JSON.parse(JSON.stringify(context.parseVerboseOutput(text)));
+const rows = ['test_basket.py::test_quantities FAILED [ 33%]', 'test_basket.py::test_empty PASSED [ 66%]', 'test_basket.py::test_decimal_prices FAILED [100%]'];
+const summary = '========================= 2 failed, 1 passed in 0.15s ==========================';
+const normal = parse([...rows, summary].join('\n'));
+const fragmented = parse([...rows.map(row => row.replace(/ (FAILED|PASSED)/, '\n$1')), summary].join('\n'));
+assert.deepEqual(fragmented, normal);
+assert.deepEqual(fragmented.tests.map(test => test.status), ['failed', 'passed', 'failed']);
+assert.equal(fragmented.summary, '2 failed, 1 passed in 0.15s');
+const passed = parse('test_orders.py::test_valid\nPASSED [100%]\n=== 1 passed in 0.1s ===');
+assert.deepEqual(passed.tests, [{name: 'test_valid', status: 'passed'}]);
+const other = parse('tests/test_order.py::test_invalid[zero]\nERROR [50%]\ntests/test_order.py::test_skip\nSKIPPED [100%]\norders.py:4: in validate_quantity\n');
+assert.deepEqual(other.tests.map(test => test.status), ['error', 'skipped']);
+assert.deepEqual(other.failureLocations, {'orders.py': [4]});
+console.log('pytest parser: complete and fragmented output, failures, passes, errors, skips and locations verified');

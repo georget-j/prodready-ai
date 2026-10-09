@@ -294,7 +294,13 @@ function parseVerboseOutput(text: string): {
   const tests: TestRow[] = [];
   let summary = "";
   const failureLocations: FailureLocations = {};
-  for (const rawLine of text.split("\n")) {
+  // Pyodide batched stdout can flush a test node ID before its status.
+  // Rejoin that known pair before parsing, without merging traceback lines.
+  const normalised = text.replace(
+    /^(.+?::[^\s]+)[ \t]*\n\s*(PASSED|FAILED|ERROR|SKIPPED)\b/gim,
+    "$1 $2",
+  );
+  for (const rawLine of normalised.split("\n")) {
     const line = rawLine.trimStart();
     const statusMatch = VERBOSE_LINE_RE.exec(line);
     if (statusMatch) {
@@ -486,3 +492,4 @@ workerSelf.addEventListener(
     }
   },
 );
+

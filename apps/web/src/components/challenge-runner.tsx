@@ -1000,7 +1000,9 @@ export const ChallengeRunner = forwardRef<ChallengeRunnerHandle, Props>(
                   {runState.kind === "done"
                     ? failureCount > 0
                       ? `${failureCount} test${failureCount === 1 ? "" : "s"} failing — fix the top one first`
-                      : "All tests passed"
+                      : passed && runState.result.tests.length > 0
+                        ? "All tests passed"
+                        : "Tests did not complete"
                     : `Tests (${config.tests.length})`}
                 </span>
                 {explainState.kind === "loading" && (
