@@ -387,9 +387,20 @@ async function runPytest(
 
   try {
     const exit = await py.runPythonAsync(`
-import sys, os
+import sys, os, importlib, pathlib, shutil
 sys.path.insert(0, "/home/pyodide")
 os.chdir("/home/pyodide")
+# pytest runs repeatedly in one Python process. Clear only lesson imports so
+# edits are reloaded instead of reusing the implementation from the first run.
+_lesson_root = os.getcwd() + "/"
+sys.dont_write_bytecode = True
+for _name, _module in list(sys.modules.items()):
+    _file = getattr(_module, "__file__", None)
+    if isinstance(_file, str) and os.path.abspath(_file).startswith(_lesson_root):
+        del sys.modules[_name]
+for _cache in pathlib.Path(os.getcwd()).rglob("__pycache__"):
+    shutil.rmtree(_cache, ignore_errors=True)
+importlib.invalidate_caches()
 import pytest
 exit_code = pytest.main(${argsLiteral})
 int(exit_code)
