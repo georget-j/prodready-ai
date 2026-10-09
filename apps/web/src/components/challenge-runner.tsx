@@ -83,6 +83,9 @@ type Props = {
   /** Slug of the next lesson in the same track, for auto-advance on
    * successful submission. Null when this is the last lesson. */
   nextSlug: string | null;
+  /** Public sample mode skips authenticated AI and submission calls. */
+  demo?: boolean;
+  onRunComplete?: (result: PytestResult) => void;
   /** Called when the learner clicks 'Stuck?'. Receives a pre-baked
    * message the parent can forward to the mentor chat. */
   onStuck?: (message: string) => void;
@@ -180,6 +183,8 @@ export const ChallengeRunner = forwardRef<ChallengeRunnerHandle, Props>(
       nextSlug,
       onStuck,
       onFilesChange,
+      demo = false,
+      onRunComplete,
     },
     ref,
   ) {
@@ -448,13 +453,14 @@ export const ChallengeRunner = forwardRef<ChallengeRunnerHandle, Props>(
         );
         setRunState({ kind: "done", result });
         setFailureLocations(result.failureLocations);
+        onRunComplete?.(result);
         const hasFailure = result.tests.some(
           (t) => t.status === "failed" || t.status === "error",
         );
-        if (hasFailure) {
+        if (hasFailure && !demo) {
           // Background AI explanation for failing tests.
           void explainFailures(result.output, files);
-        } else if (result.tests.length > 0) {
+        } else if (result.exitCode === 0 && result.tests.length > 0) {
           // All tests passed — single confetti burst to mark the win.
           void celebrate();
         }
@@ -470,7 +476,7 @@ export const ChallengeRunner = forwardRef<ChallengeRunnerHandle, Props>(
           },
         });
       }
-    }, [files, config.tests, explainFailures]);
+    }, [files, config.editable, config.tests, explainFailures, demo, onRunComplete]);
 
     /** Open `path` (if among the loaded files) and scroll Monaco to `line`,
      * adding a transient yellow highlight. Used by 'Jump to code →' buttons
@@ -909,7 +915,7 @@ export const ChallengeRunner = forwardRef<ChallengeRunnerHandle, Props>(
                         I&apos;m stuck — help
                       </Button>
                     )}
-                    {passed && submitState.kind !== "passed" && (
+                    {!demo && passed && submitState.kind !== "passed" && (
                       <Button
                         size="lg"
                         onClick={handleSubmit}
@@ -1132,3 +1138,4 @@ export const ChallengeRunner = forwardRef<ChallengeRunnerHandle, Props>(
     );
   },
 );
+

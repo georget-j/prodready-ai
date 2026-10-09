@@ -15,12 +15,12 @@ export default function HomePage() {
           wire up fake APIs — graduate with portfolio-ready proof of work.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link href="/tracks">
-            <Button size="lg">See the tracks</Button>
+          <Link href="/demo">
+            <Button size="lg">Try demo — no sign-in</Button>
           </Link>
-          <Link href="/pricing">
+          <Link href="/tracks">
             <Button size="lg" variant="outline">
-              Pricing
+              See the tracks
             </Button>
           </Link>
         </div>
@@ -110,3 +110,4 @@ function Feature({
     </div>
   );
 }
+

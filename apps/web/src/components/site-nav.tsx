@@ -17,19 +17,21 @@ export function SiteNav() {
         <div className="flex items-center gap-2">
           <Link
             href="/tracks"
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline-flex"
           >
             Tracks
           </Link>
           <Link
             href="/pricing"
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline-flex"
           >
             Pricing
           </Link>
+          <Link href="/demo" className="rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800">Try demo</Link>
           <NavAuthButton />
         </div>
       </nav>
     </header>
   );
 }
+
